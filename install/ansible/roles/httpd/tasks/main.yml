@@ -1,0 +1,84 @@
+---
+- name: ensure yum is updated
+  yum:
+    name: '*'
+    state: 'latest'
+
+- name: ensure httpd is installed
+  yum:
+    name: "{{ packages }}"
+    state: 'latest'
+  vars:
+    packages:
+      - 'httpd'
+      - 'mod_proxy_html'
+      - 'mod_ssl'
+
+- name: httpd delete file glob
+  find:
+    paths: /etc/httpd/conf.d
+    patterns: '*.conf'
+  register: 'httpd_files_to_delete'
+
+- name: httpd remove file glob
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ httpd_files_to_delete.files }}"
+
+- name: write the httpd master config file
+  copy:
+    src: 'httpd.conf'
+    dest: '/etc/httpd/conf/'
+
+- name: write the mime types file
+  copy:
+    src: 'mime.types'
+    dest: '/etc/httpd/conf/'
+
+- name: write the ssl config file
+  copy:
+    src: 'ssl.conf'
+    dest: '/etc/httpd/conf.d/'
+
+- name: write robots.txt
+  copy:
+    src: 'robots.txt'
+    dest: '/etc/httpd/'
+
+- name: write traefik proxy
+  copy:
+    src: 'traefik-proxy.conf'
+    dest: '/etc/httpd/conf.d/services/'
+
+- name: ensure httpd run directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+  with_items:
+    - "{{ install_dir }}/httpd"
+    - "{{ install_dir }}/httpd/entrypoint.d"
+    - "/etc/httpd/conf.d/services"
+    - "/etc/systemd/system/httpd.service.d"
+
+- name: copy entrypoint scripts
+  copy:
+    src: '{{ item }}'
+    dest: "{{ install_dir }}/httpd/entrypoint.d/"
+    mode: '0755'
+  with_fileglob:
+    - 'entrypoint.d/*'
+
+- name: copy entrypoint
+  copy:
+    src: 'entrypoint.sh'
+    dest: "{{ install_dir }}/httpd/bin/"
+    mode: '0755'
+
+- name: chown files to httpd
+  file:
+    path: '/etc/httpd'
+    owner: 'apache'
+    group: 'apache'
+    state: 'directory'
+    recurse: 'yes'

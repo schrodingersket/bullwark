@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+TRAEFIK_LOGLEVEL=${TRAEFIK_LOGLEVEL:-DEBUG}
+TRAEFIK_API_ADDRESS=${TRAEFIK_API_ADDRESS:-:8080}
+TRAEFIK_ENTRYPOINT=${TRAEFIK_ENTRYPOINT:-http}
+TRAEFIK_HTTP_ADDRESS=${TRAEFIK_HTTP_ADDRESS:-:80}
+TRAEFIK_API_ENTRYPOINT=${TRAEFIK_API_ENTRYPOINT:-api}
+TRAEFIK_API_DASHBOARD=${TRAEFIK_API_DASHBOARD:-true}
+
+TRAEFIK_CONSUL_ENDPOINT=${TRAEFIK_CONSUL_ENDPOINT:-127.0.0.1:8500}
+TRAEFIK_CONSUL_PREFIX=${TRAEFIK_CONSUL_PREFIX:-traefik}
+
+CONSUL_BINARY={{ install_dir }}/traefik-backend/bin/consul
+
+# General Traefik configuration
+#
+${CONSUL_BINARY} kv put traefik/loglevel ${TRAEFIK_LOGLEVEL}
+${CONSUL_BINARY} kv put traefik/defaultentrypoints/0 ${TRAEFIK_ENTRYPOINT}
+${CONSUL_BINARY} kv put traefik/entrypoints/api/address ${TRAEFIK_API_ADDRESS}
+${CONSUL_BINARY} kv put traefik/entrypoints/${TRAEFIK_ENTRYPOINT}/address ${TRAEFIK_HTTP_ADDRESS}
+${CONSUL_BINARY} kv put traefik/api/entrypoint ${TRAEFIK_API_ENTRYPOINT}
+${CONSUL_BINARY} kv put traefik/api/dashboard ${TRAEFIK_API_DASHBOARD}
+
+# Consul-specific configuration
+#
+${CONSUL_BINARY} kv put traefik/consul/endpoint ${TRAEFIK_CONSUL_ENDPOINT}
+${CONSUL_BINARY} kv put traefik/consul/watch true
+${CONSUL_BINARY} kv put traefik/consul/prefix ${TRAEFIK_CONSUL_PREFIX}

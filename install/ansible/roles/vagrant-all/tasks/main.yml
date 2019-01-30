@@ -1,0 +1,63 @@
+---
+
+- name: ensure yum is updated
+  yum:
+    name: '*'
+    state: 'latest'
+
+- name: ensure net-tools, nmap, vim, tcpdump, and traceroute are installed
+  yum:
+    name: "{{ packages }}"
+    state: 'latest'
+  vars:
+    packages:
+      - 'net-tools'
+      - 'vim'
+      - 'tcpdump'
+      - 'traceroute'
+      - 'nmap'
+
+- name: disable selinux
+  selinux:
+    policy: 'targeted'
+    state: 'permissive'
+  when:
+    - "disable_selinux"
+    - "selinux_result is succeeded"
+    - "selinux_result.stdout == 'Enforcing'"
+
+
+# The below configuration blocks are specifically for running a Bullwark
+# cluster on a set of raw virtual machines. It's expected that alternate startup
+# configuration should exist when running with Docker images.
+#
+- name: override hosts file
+  template:
+    src: 'hosts.j2'
+    dest: '/etc/hosts'
+    owner: 'root'
+    group: 'root'
+
+# IPSec
+- name: allow direct access to services from host
+  template:
+    src: 'allow-host-access.sh.j2'
+    dest: "{{ install_dir }}/ipsec/entrypoint.d/allow-host-access.sh"
+    mode: '0755'
+
+- name: configure libreswan
+  expect:
+    command: "bash {{ install_dir }}/ipsec/bin/entrypoint.sh"
+    responses:
+      Enter password for PKCS12 file:
+        - ''
+  environment:
+    - IPSEC_IP: "{{ target_ip }}"
+    - IPSEC_CIDRS: "{{ ipsec_cidrs }}"
+    - install_dir: "{{ install_dir }}"
+
+- name: ensure libreswan is running and enabled
+  systemd:
+    name: 'ipsec'
+    state: 'restarted'
+    enabled: 'yes'

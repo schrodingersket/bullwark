@@ -1,0 +1,16 @@
+[Unit]
+Description="Bullwark Registrar - A service registration microservice for Bullwark"
+Documentation=https://github.com/schrodingersket/bullwark-registrar
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=bwrkregistrar
+Group=bwrkregistrar
+ExecStart={{ install_dir }}/registrar/bin/bullwark-registrar
+KillMode=process
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

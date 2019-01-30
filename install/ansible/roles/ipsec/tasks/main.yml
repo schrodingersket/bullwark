@@ -1,0 +1,65 @@
+---
+- import_tasks: sysctl.yml
+
+- name: ensure yum is updated
+  yum:
+    name: '*'
+    state: 'latest'
+
+- name: ensure libreswan is installed
+  yum:
+    name: "{{ packages }}"
+    state: 'latest'
+  vars:
+    packages:
+      - 'libreswan'
+
+- name: write the libreswan master config file
+  copy:
+    src: 'ipsec.conf'
+    dest: '/etc/'
+
+- name: write the libreswan clear policy file
+  copy:
+    src: 'private-or-clear'
+    dest: '/etc/ipsec.d/policies/'
+
+- name: write the libreswan opportunistic encryption config file
+  copy:
+    src: 'oe-certificate.conf'
+    dest: '/etc/ipsec.d/'
+
+- import_tasks: selinux.yml
+  when:
+    - "selinux_result is succeeded"
+    - "selinux_result.stdout == 'Enforcing'"
+
+- name: ensure ipsec run directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+  with_items:
+    - "{{ install_dir }}/ipsec"
+    - "{{ install_dir }}/ipsec/entrypoint.d"
+
+- name: copy entrypoint scripts
+  copy:
+    src: '{{ item }}'
+    dest: "{{ install_dir }}/ipsec/entrypoint.d/"
+    mode: '0755'
+  with_fileglob:
+    - 'entrypoint.d/*'
+
+- name: copy entrypoint
+  copy:
+    src: 'entrypoint.sh'
+    dest: "{{ install_dir }}/ipsec/bin/"
+    mode: '0755'
+
+- name: clean nss database
+  file:
+    state: 'absent'
+    path: '/etc/ipsec.d/*.db'
+
+- name: initialize nss database
+  command: "ipsec checknss"

@@ -1,0 +1,6 @@
+---
+docker_edition: "docker-ce"
+docker_package_version: ""
+docker_package: '{{ docker_edition }}{{ docker_package_version }}'
+docker_repo_url: 'https://download.docker.com/linux/centos/docker-ce.repo'
+docker_gpg_key_url: 'https://download.docker.com/linux/centos/gpg'

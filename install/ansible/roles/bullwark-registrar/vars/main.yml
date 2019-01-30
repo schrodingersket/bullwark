@@ -1,0 +1,7 @@
+---
+
+docker_registry: ''
+golang_image: 'golang'
+
+bullwark_registrar_ssh_url: 'ssh://git@github.com:schrodingersket/bullwark-registrar.git'
+bullwark_registrar_https_url: 'https://github.com/schrodingersket/bullwark-registrar.git'

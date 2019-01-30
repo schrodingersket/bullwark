@@ -1,0 +1,11 @@
+{
+  "bootstrap_expect": {{ workers|length }},
+  "retry_join": [
+  {% for worker in workers %}
+  "{{ worker.ip }}"
+  {% if not loop.last %}
+    ,
+  {% endif %}
+  {% endfor %}
+  ]
+}

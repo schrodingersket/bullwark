@@ -1,0 +1,49 @@
+---
+
+- name: add traefik group
+  group:
+    name: 'traefik'
+    state: 'present'
+
+- name: add traefik user
+  user:
+    name: 'traefik'
+    group: 'traefik'
+
+- name: ensure traefik directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+    owner: 'traefik'
+    group: 'traefik'
+  with_items:
+    - "{{ install_dir }}/traefik"
+    - "{{ install_dir }}/traefik/conf"
+    - "{{ install_dir }}/traefik/bin"
+    - "{{ install_dir }}/traefik/entrypoint.d"
+
+- name: check if traefik binary exists
+  stat: "path={{ install_dir }}/traefik/bin/traefik"
+  register: 'traefik_binary_result'
+
+- name: get traefik binary
+  get_url:
+    url: "{{ traefik_binary_url }}"
+    dest: "{{ install_dir }}/traefik/bin/traefik"
+    mode: '0755'
+    owner: 'traefik'
+    group: 'traefik'
+  when: 'not traefik_binary_result.stat.exists'
+
+- name: write traefik config
+  copy:
+    src: 'traefik.toml'
+    dest: "{{ install_dir }}/traefik/conf/traefik.toml"
+    owner: 'traefik'
+    group: 'traefik'
+
+- name: copy entrypoint
+  copy:
+    src: 'entrypoint.sh'
+    dest: "{{ install_dir }}/traefik/bin/"
+    mode: '0755'

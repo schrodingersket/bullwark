@@ -1,0 +1,79 @@
+---
+
+# Set hosts
+#
+- hosts: localhost
+  gather_facts: no
+  connection: local
+  roles:
+    - { role: set_hosts, tags: ['set_hosts'] }
+  tags:
+    - set_hosts
+
+# Install basic infrastructure components for all VMs.
+#
+- hosts: all
+  roles:
+    - { role: common, tags: ['common'] }
+    - { role: docker, tags: ['docker'] }
+  tags:
+    - common
+
+# Install IPSec for all VMs.
+#
+- hosts: all
+  roles:
+    - { role: ipsec, tags: ['ipsec'] }
+  tags:
+    - ipsec
+
+# Install orchestrator-specific components.
+#
+- hosts: orchestrators
+  roles:
+    - { role: orchestrator, tags: ['orchestrator'] }
+  tags:
+    - orchestrators_infrastructure
+
+# Install worker components.
+#
+- hosts: workers
+  roles:
+    - { role: consul, tags: ['consul'] }
+    - { role: httpd, tags: ['httpd'] }
+    - { role: traefik-backend, tags: ['traefik-backend'] }
+    - { role: traefik, tags: ['traefik'] }
+    - { role: bullwark-registrar, tags: ['bullwark-registrar'] }
+    - { role: bullwark-microservices, tags: ['bullwark-microservices'] }
+  tags:
+    - workers_infrastructure
+
+# Add certs for IPSec/Load Balancer
+#
+- hosts: all
+  serial: 1
+  roles:
+    - { role: certs, tags: ['certs'] }
+  tags:
+    - certs_postinstall
+
+# Post infrastructure install for workers; this starts the various services on
+# each worker required to function. Currently, this includes Consul, Traefik,
+# HTTPD, and the Bullwark Registrar.
+#
+- hosts: workers
+  roles:
+    - { name: vagrant-workers, tags: ['vagrant-workers'], when: 'vagrant'}
+  tags:
+    - workers_postinstall
+
+# Post infrastructure Vagrant install; this installs developer tools for network
+# diagnostics and starts IPSec on all hosts. In the Vagrant environment, this
+# adds a systemd unit for IPSec; other environments would necessitate different
+# deployment (e.g., in a Kubernetes environment, this would deploy a pod).
+#
+- hosts: all
+  roles:
+    - { name: vagrant-all, tags: ['vagrant-all'], when: 'vagrant'}
+  tags:
+    - all_postinstall

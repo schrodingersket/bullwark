@@ -1,0 +1,75 @@
+---
+
+- name: check for bullwark registrar
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "stat path={{ role_path }}/files/bullwark-registrar"
+  register: 'stat_bullwark_registrar'
+
+- name: clone bullwark registrar over ssh
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "git repo={{ bullwark_registrar_ssh_url }} dest={{ role_path }}/files/bullwark-registrar"
+  ignore_errors: 'yes'
+  when: 'not stat_bullwark_registrar.stat.exists'
+
+- name: check whether bullwark registrar was cloned
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "stat path={{ role_path }}/files/bullwark-registrar"
+  register: 'stat_ssh_bullwark_registrar'
+
+- name: clone registrar over https if ssh failed
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    module: expect
+    command: "git clone {{ bullwark_registrar_https_url }} {{ role_path }}/files/bullwark-registrar"
+    responses:
+      (?i)username: "{{ email }}"
+      (?i)password: "{{ password }}"
+  when: 'not stat_ssh_bullwark_registrar.stat.exists'
+
+- name: build bullwark registrar
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    command
+    make docker-build
+  args:
+    chdir: "{{ role_path }}/files/bullwark-registrar"
+
+- name: add bullwark registrar group
+  group:
+    name: 'bwrkregistrar'
+    state: 'present'
+
+- name: add bullwark registrar user
+  user:
+    name: 'bwrkregistrar'
+    group: 'bwrkregistrar'
+
+- name: ensure remote registrar directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+    owner: 'bwrkregistrar'
+    group: 'bwrkregistrar'
+  with_items:
+    - "{{ install_dir }}/registrar"
+    - "{{ install_dir }}/registrar/conf"
+    - "{{ install_dir }}/registrar/bin"
+    - "{{ install_dir }}/registrar/entrypoint.d"
+
+- name: copy registrar
+  copy:
+    src: 'bullwark-registrar/bin/bullwark-registrar'
+    dest: "{{ install_dir }}/registrar/bin/"
+    mode: '0755'
+    owner: 'bwrkregistrar'
+    group: 'bwrkregistrar'

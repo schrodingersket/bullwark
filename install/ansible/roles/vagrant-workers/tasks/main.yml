@@ -1,0 +1,87 @@
+---
+
+# Consul
+- name: configure consul systemd
+  template:
+    src: 'consul.service.j2'
+    dest: '/etc/systemd/system/consul.service'
+
+- name: configure consul servers
+  template:
+    src: 'extra-consul.json.j2'
+    dest: "{{ install_dir }}/consul/conf/extra-consul.json"
+
+- name: ensure consul is running and enabled
+  systemd:
+    name: 'consul'
+    state: 'restarted'
+    daemon_reload: 'yes'
+    enabled: 'yes'
+
+# httpd
+- name: configure httpd systemd
+  template:
+    src: 'httpd.env.conf.j2'
+    dest: '/etc/systemd/system/httpd.service.d/httpd.env.conf'
+
+- name: ensure httpd is running and enabled
+  systemd:
+    name: 'httpd'
+    state: 'restarted'
+    daemon_reload: 'yes'
+    enabled: 'yes'
+
+# Traefik backend
+- name: configure traefik-backend
+  command: "bash {{ install_dir }}/traefik-backend/bin/entrypoint.sh"
+  environment:
+    - TRAEFIK_CONSUL_ENDPOINT: "127.0.0.1:8500"
+    - CONSUL_HTTP_ADDR: "http://127.0.0.1:8500"
+
+# Traefik
+- name: run traefik configuration
+  command: "bash {{ install_dir }}/traefik/bin/entrypoint.sh"
+
+- name: configure traefik systemd
+  template:
+    src: 'traefik.service.j2'
+    dest: '/etc/systemd/system/traefik.service'
+
+- name: ensure traefik is running and enabled
+  systemd:
+    name: 'traefik'
+    state: 'restarted'
+    daemon_reload: 'yes'
+    enabled: 'yes'
+
+# Bullwark Registrar
+- name: configure bullwark registrar systemd
+  template:
+    src: 'bullwark-registrar.service.j2'
+    dest: '/etc/systemd/system/bullwark-registrar.service'
+
+- name: ensure bullwark registrar is running and enabled
+  systemd:
+    name: 'bullwark-registrar'
+    state: 'restarted'
+    daemon_reload: 'yes'
+    enabled: 'yes'
+
+# Bullwark microservice server
+- name: configure bullwark microservice systemd
+  template:
+    src: 'bullwark-microservice.service.j2'
+    dest: '/etc/systemd/system/bullwark-microservice.service'
+
+- name: ensure bullwark microservice is running and enabled
+  systemd:
+    name: 'bullwark-microservice'
+    state: 'restarted'
+    daemon_reload: 'yes'
+    enabled: 'yes'
+
+- name: add bullwark microservices user to docker group
+  user:
+    name: 'bwrkmicroservices'
+    group: 'docker'
+    append: 'yes'

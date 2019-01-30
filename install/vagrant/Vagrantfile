@@ -1,0 +1,79 @@
+servers = YAML.load_file(File.join(File.dirname(__FILE__), 'servers.yml'))
+
+Vagrant.configure("2") do |config| 
+  # Common configuration
+  config.vm.box = servers["box"]
+
+  config.vm.provision :shell, :inline =>"
+    echo 'Allowing ssh password auth'
+    sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/g' /etc/ssh/sshd_config
+    systemctl restart sshd
+    ", privileged: true
+
+  config.vm.provision :shell, :inline =>"
+    echo 'Disabling host key checking'
+    echo 'Host .*' >> /home/vagrant/.ssh/config
+    echo 'StrictHostKeyChecking no' >> /home/vagrant/.ssh/config
+    echo 'UserKnownHostsFile /dev/null' >> /home/vagrant/.ssh/config
+    chmod -R 600 /home/vagrant/.ssh/config
+    ", privileged: false
+
+  servers["workers"].each do |worker|
+    config.vm.define worker["hostname"] do |host|
+      host.vm.hostname = worker["hostname"]
+      host.vm.network "private_network", ip: worker["ip"], netmask: "255.255.255.0", dhcp_enabled: false
+      host.vm.provider "virtualbox" do |v|
+        v.name = worker["hostname"]
+        v.memory = servers["memory"]
+      end
+    end
+  end
+
+  servers["orchestrators"].each do |worker|
+    config.vm.define worker["hostname"] do |host|
+
+      host.vm.synced_folder "../../", "/bullwark", type: "rsync"
+      host.vm.hostname = worker["hostname"]
+      host.vm.network "private_network", ip: worker["ip"], netmask: "255.255.255.0", dhcp_enabled: false
+      host.vm.provider "virtualbox" do |v|
+        v.name = worker["hostname"]
+        v.memory = servers["memory"]
+      end
+
+
+      if Dir.glob("#{File.dirname(__FILE__)}/.vagrant/machines/#{worker["hostname"]}/*").empty? || ARGV[1] == '--provision'
+
+        puts "We'll need your GitHub credentials - these will be encrypted inside the orchestrator VM with a randomly generated key."
+
+        # Windows workaround for noecho
+        #
+        if RbConfig::CONFIG['host_os'] =~ /cygwin|mswin|mingw32/
+          print "Please enter your GitHub username and then hit [ENTER]: "
+          STDOUT.flush
+          username = STDIN.gets.chomp
+          # 8m is the control code to hide characters
+          #
+          print "Please enter your GitHub password and then hit [ENTER]: \e[0;8m"
+          STDOUT.flush
+          password = STDIN.gets.chomp
+          # 0m is the control code to reset formatting attributes
+          #
+          puts "\e[0m"
+          STDOUT.flush
+        else
+          print "Please enter your GitHub username and then hit [ENTER]: "
+          username = STDIN.gets.chomp
+          print "Please enter your GitHub password and then hit [ENTER]: "
+          password = STDIN.noecho(&:gets).chomp
+        end
+
+        print "\n"
+
+        vault_password = (0...8).map { (65 + rand(26)).chr }.join
+
+        host.vm.provision "shell", :path => "bootstrap.sh", :args => [username, password, vault_password]
+      end
+    end
+  end
+
+end

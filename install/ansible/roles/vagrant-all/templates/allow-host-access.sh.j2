@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+PRIVATE_OR_CLEAR_POLICY="/etc/ipsec.d/policies/private-or-clear"
+
+grep -q -F '{{ host_cidr }}' ${PRIVATE_OR_CLEAR_POLICY} || echo "{{ host_cidr }}" >> ${PRIVATE_OR_CLEAR_POLICY}

@@ -1,0 +1,130 @@
+---
+
+- name: copy openssl CA conf
+  vars:
+    ansible_become: 'no'
+  local_action: "template src=openssl.ca.conf.j2 dest={{ role_path }}/files/openssl.ca.conf"
+
+- name: copy openssl conf
+  vars:
+    ansible_become: 'no'
+  local_action: "template src=openssl.conf.j2 dest={{ role_path }}/files/openssl.conf"
+
+- name: check for root CA
+  vars:
+    ansible_become: 'no'
+  local_action: "stat path={{ role_path }}/files/certs/ca/ca.pem"
+  register: 'stat_ca_cert'
+
+- name: create root CA key
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    command
+    openssl genrsa
+      -aes256
+      -passout pass:{{ ca_key_pass }}
+      -out {{ role_path }}/files/certs/ca/ca.key.pem
+      4096
+  when: 'not stat_ca_cert.stat.exists'
+
+- name: create root CA
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    command
+    openssl req
+      -config {{ role_path }}/files/openssl.ca.conf
+      -key {{ role_path }}/files/certs/ca/ca.key.pem
+      -new -x509
+      -days 3650
+      -sha256
+      -subj "/C=US/ST=CA/O=ACME Corporation/CN=Root ACME CA"
+      -passin pass:{{ ca_key_pass }}
+      -out {{ role_path }}/files/certs/ca/ca.pem
+  when: 'not stat_ca_cert.stat.exists'
+  environment:
+    - SAN: ''
+    - CERT_DEST: ''
+
+- name: append env-controlled SAN field
+  vars:
+    ansible_become: 'no'
+  local_action:
+    backup: 'yes'
+    module: 'lineinfile'
+    insertafter: 'EOF'
+    path: "{{ role_path }}/files/openssl.conf"
+    line: 'subjectAltName = ${ENV::SAN}'
+    state: 'present'
+
+- name: ensure generated cert directory exists
+  vars:
+    ansible_become: 'no'
+  local_action: "file path={{ role_path }}/files/certs/{{ target_ip }} state=directory"
+
+- name: check for certs
+  vars:
+    ansible_become: 'no'
+  local_action: "stat path={{ role_path }}/files/certs/{{ target_ip }}/cert.pem"
+  register: 'stat_certs'
+
+- name: create CSR
+  vars:
+    ansible_become: 'no'
+  local_action:
+    command
+    openssl req
+      -config {{ role_path }}/files/openssl.conf
+      -nodes
+      -out {{ role_path }}/files/certs/{{ target_ip }}/csr.pem
+      -keyout {{ role_path }}/files/certs/{{ target_ip }}/key.pem
+      -subj "/C=US/ST=CA/O=ACME Corporation/CN={{ target_ip }}"
+      -new
+      -sha256
+  ignore_errors: 'yes'
+  when: 'not stat_certs.stat.exists'
+  environment:
+    - CERT_DEST: "certs/{{ target_ip }}"
+    - SAN: "DNS:{{ target_hostname }},IP:{{ target_ip }}"
+
+- name: sign CSR
+  vars:
+    ansible_become: 'no'
+  local_action:
+    command
+    openssl ca
+      -passin pass:{{ ca_key_pass }}
+      -config {{ role_path }}/files/openssl.conf
+      -extensions v3_req
+      -days 3650
+      -notext
+      -md sha256
+      -in {{ role_path }}/files/certs/{{ target_ip }}/csr.pem
+      -out {{ role_path }}/files/certs/{{ target_ip }}/cert.pem
+      -batch
+  ignore_errors: 'yes'
+  when: 'not stat_certs.stat.exists'
+  environment:
+    - CERT_DEST: "certs/{{ target_ip }}"
+    - SAN: "DNS:{{ target_hostname }},IP:{{ target_ip }}"
+
+- name: copy CA
+  copy:
+    src: "certs/ca"
+    dest: "{{ install_dir }}/certs/"
+    mode: '0755'
+
+- name: copy certs
+  copy:
+    src: "certs/{{ target_ip }}/"
+    dest: "{{ install_dir }}/certs"
+    mode: '0755'
+
+- name: generate pkcs12 file
+  command: "openssl pkcs12 -export -in cert.pem -inkey key.pem -out certs.p12 -CAfile ca/ca.pem -certfile ca/ca.pem -passout pass: -name bullwark"
+  args:
+    creates: "{{ install_dir }}/certs/certs.p12"
+    chdir: "{{ install_dir }}/certs"

@@ -1,0 +1,16 @@
+[Unit]
+Description="Bullwark Microservices - A microservice deployment server"
+Documentation=https://github.com/schrodingersket/bullwark-microservices
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+User=bwrkmicroservices
+Group=bwrkmicroservices
+ExecStart={{ install_dir }}/microservices/bin/bullwark-microservice-server --port 8001 --bin-save-path {{ install_dir }}/microservices/data
+KillMode=process
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

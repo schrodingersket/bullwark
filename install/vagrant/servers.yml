@@ -1,0 +1,25 @@
+---
+box: 'centos/7'
+memory: '1024'
+ipsec_cidrs: "192.168.50.128/25"
+host_cidr: "192.168.50.1/32"
+
+orchestrators:
+  - hostname: 'elodin'
+    ip: '192.168.50.128'
+    ssh_ip: '192.168.50.128'
+    ssh_port: '22'
+
+workers:
+  - hostname: 'bast'
+    ip: '192.168.50.129'
+    ssh_ip: '192.168.50.129'
+    ssh_port: '22'
+  - hostname: 'kvothe'
+    ip: '192.168.50.130'
+    ssh_ip: '192.168.50.130'
+    ssh_port: '22'
+  - hostname: 'chronicler'
+    ip: '192.168.50.131'
+    ssh_ip: '192.168.50.131'
+    ssh_port: '22'

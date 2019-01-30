@@ -1,0 +1,59 @@
+---
+
+- name: ensure yum is updated
+  yum:
+    name: '*'
+    state: 'latest'
+
+- name: ensure unzip is installed
+  yum:
+    name: "{{ packages }}"
+    state: 'latest'
+  vars:
+    packages:
+      - 'unzip'
+
+- name: add traefik-backend group
+  group:
+    name: 'traefik-backend'
+    state: 'present'
+
+- name: add traefik-backend user
+  user:
+    name: 'traefik-backend'
+    group: 'traefik-backend'
+
+- name: ensure traefik-backend directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+    owner: 'traefik-backend'
+    group: 'traefik-backend'
+  with_items:
+    - "{{ install_dir }}/traefik-backend"
+    - "{{ install_dir }}/traefik-backend/conf"
+    - "{{ install_dir }}/traefik-backend/bin"
+    - "{{ install_dir }}/traefik-backend/entrypoint.d"
+
+- name: download and extract consul cli
+  unarchive:
+    src: "{{ consul_binary_url }}"
+    dest: "{{ install_dir }}/traefik-backend/bin"
+    creates: "{{ install_dir }}/traefik-backend/bin/consul"
+    remote_src: 'yes'
+    owner: 'traefik-backend'
+    group: 'traefik-backend'
+
+- name: copy entrypoint scripts
+  template:
+    src: 'entrypoint.d/configure-traefik-consul.sh.j2'
+    dest: "{{ install_dir }}/traefik-backend/entrypoint.d/configure-traefik-consul.sh"
+    mode: '0755'
+
+- name: copy entrypoint
+  copy:
+    src: 'entrypoint.sh'
+    owner: 'traefik-backend'
+    group: 'traefik-backend'
+    dest: "{{ install_dir }}/traefik-backend/bin/"
+    mode: '0755'

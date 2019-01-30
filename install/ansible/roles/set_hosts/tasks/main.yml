@@ -1,0 +1,37 @@
+---
+- name: get vagrant hosts
+  include_vars:
+    file: "{{ playbook_dir }}/../vagrant/servers.yml"
+    name: 'servers'
+  when: 'vagrant'
+
+- name: set orchestrator hosts
+  add_host:
+    name: "{{ item.hostname }}"
+    ansible_ssh_host: "{{ item.ssh_ip }}"
+    ansible_ssh_port: "{{ item.ssh_port }}"
+    hostname: "{{ item.hostname }}"
+    groups: 'orchestrators'
+    target_ip: "{{ item.ip }}"
+    target_hostname: "{{ item.hostname }}"
+    workers: "{{ servers.workers }}"
+    orchestrators: "{{ servers.orchestrators }}"
+    ipsec_cidrs: "{{ servers.ipsec_cidrs }}"
+    host_cidr: "{{ servers.host_cidr }}"
+  with_items: "{{ servers.orchestrators }}"
+
+- name: set worker hosts
+  add_host:
+    name: "{{ item.hostname }}"
+    ansible_ssh_host: "{{ item.ssh_ip }}"
+    ansible_ssh_port: "{{ item.ssh_port }}"
+    hostname: "{{ item.hostname }}"
+    groups: 'workers'
+    target_ip: "{{ item.ip }}"
+    target_hostname: "{{ item.hostname }}"
+    workers: "{{ servers.workers }}"
+    orchestrators: "{{ servers.orchestrators }}"
+    ipsec_cidrs: "{{ servers.ipsec_cidrs }}"
+    host_cidr: "{{ servers.host_cidr }}"
+  with_items: "{{ servers.workers }}"
+

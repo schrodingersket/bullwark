@@ -1,0 +1,76 @@
+---
+
+- name: check for bullwark microservices
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "stat path={{ role_path }}/files/bullwark-microservices"
+  register: 'stat_bullwark_microservices'
+
+- name: clone bullwark microservices server over ssh
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "git repo={{ bullwark_microservices_ssh_url }} dest={{ role_path }}/files/bullwark-microservices"
+  ignore_errors: 'yes'
+  when: 'not stat_bullwark_microservices.stat.exists'
+
+- name: check whether bullwark microservices server was cloned
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "stat path={{ role_path }}/files/bullwark-microservices"
+  register: 'stat_ssh_bullwark_microservices'
+
+- name: clone bullwark microservices server over https if ssh failed
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    module: expect
+    command: "git clone {{ bullwark_microservices_https_url }} {{ role_path }}/files/bullwark-microservices"
+    responses:
+      (?i)username: "{{ email }}"
+      (?i)password: "{{ password }}"
+  when: 'not stat_ssh_bullwark_microservices.stat.exists'
+
+- name: build bullwark microservices server
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    command
+    make docker-build
+  args:
+    chdir: "{{ role_path }}/files/bullwark-microservices"
+
+- name: add bullwark microservices group
+  group:
+    name: 'bwrkmicroservices'
+    state: 'present'
+
+- name: add bullwark microservices user
+  user:
+    name: 'bwrkmicroservices'
+    group: 'bwrkmicroservices'
+
+- name: ensure remote bullwark microservices directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+    owner: 'bwrkmicroservices'
+    group: 'bwrkmicroservices'
+  with_items:
+    - "{{ install_dir }}/microservices"
+    - "{{ install_dir }}/microservices/conf"
+    - "{{ install_dir }}/microservices/bin"
+    - "{{ install_dir }}/microservices/data"
+    - "{{ install_dir }}/microservices/entrypoint.d"
+
+- name: copy bullwark microservices server
+  copy:
+    src: 'bullwark-microservices/bin/bullwark-microservice-server'
+    dest: "{{ install_dir }}/microservices/bin/"
+    mode: '0755'
+    owner: 'bwrkmicroservices'
+    group: 'bwrkmicroservices'

@@ -1,0 +1,48 @@
+---
+- name: ensure yum is updated
+  yum:
+    name: '*'
+    state: 'latest'
+
+- name: ensure unzip is installed
+  yum:
+    name: "{{ packages }}"
+    state: 'latest'
+  vars:
+    packages:
+      - 'unzip'
+
+- name: add consul group
+  group:
+    name: 'consul'
+    state: 'present'
+
+- name: add consul user
+  user:
+    name: 'consul'
+    group: 'consul'
+
+- name: ensure consul directories exist
+  file:
+    path: "{{ item }}"
+    state: 'directory'
+    owner: 'consul'
+    group: 'consul'
+  with_items:
+    - "{{ install_dir }}/consul"
+    - "{{ install_dir }}/consul/conf"
+    - "{{ install_dir }}/consul/bin"
+
+- name: download and extract consul
+  unarchive:
+    src: "{{ consul_binary_url }}"
+    dest: "{{ install_dir }}/consul/bin"
+    creates: "{{ install_dir }}/consul/bin/consul"
+    remote_src: 'yes'
+    owner: 'consul'
+    group: 'consul'
+
+- name: configure consul
+  template:
+    src: 'consul.json.j2'
+    dest: "{{ install_dir }}/consul/conf/consul.json"

@@ -1,0 +1,20 @@
+# Global configuration
+
+# Logging
+[traefikLog]
+  filePath = "/var/log/traefik.log"
+
+# Entrypoints configuration
+[entryPoints]
+    [entryPoints.http]
+    address = ":80"
+
+    [entryPoints.traefik]
+    address = ":8080"
+
+
+# Enable API and dashboard
+[api]
+
+# Enable ping
+[ping]

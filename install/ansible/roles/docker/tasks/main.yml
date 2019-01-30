@@ -1,0 +1,34 @@
+---
+- name: add docker gpg key
+  rpm_key:
+    key: "{{ docker_gpg_key_url }}"
+    state: 'present'
+
+- name: add docker repository
+  get_url:
+    url: "{{ docker_repo_url }}"
+    dest: "/etc/yum.repos.d/{{ docker_edition }}.repo"
+    mode: '0644'
+
+- name: ensure yum packages are up-to-date
+  yum:
+    name: '*'
+    state: 'latest'
+
+- name: ensure docker is installed
+  yum:
+    name: "{{ packages }}"
+    state: 'latest'
+  vars:
+    packages:
+      - 'yum-utils'
+      - 'device-mapper-persistent-data'
+      - 'lvm2'
+      - '{{ docker_package }}'
+
+- name: ensure docker is running and enabled
+  systemd:
+    name: 'docker'
+    state: 'started'
+    daemon_reload: 'yes'
+    enabled: 'yes'

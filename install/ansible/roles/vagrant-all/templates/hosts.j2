@@ -1,0 +1,17 @@
+# {{ ansible_managed }}
+
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+
+{% for worker in workers %}
+
+{{ worker.ip }} {{ worker.hostname }}
+
+{% endfor %}
+
+{% for orchestrator in orchestrators %}
+
+{{ orchestrator.ip }} {{ orchestrator.hostname }}
+
+{% endfor %}
