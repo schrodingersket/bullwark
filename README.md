@@ -75,6 +75,12 @@ execution to particular playbooks:
 ./ansible.sh --tags "set_hosts,common,ipsec"
 ```
 
+Alternatively, if you are using `vagrant up --provision` from your host to 
+execute your modifications, you can run something like:
+
+```bash
+```
+
 Note that the `set_hosts` and `common` tags are always required, as they provide
 common configuration for all other roles.
 

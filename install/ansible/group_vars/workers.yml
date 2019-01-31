@@ -2,3 +2,4 @@
 
 disable_selinux: false
 vagrant: false
+install_microservice_server: true

@@ -1,0 +1,57 @@
+---
+
+- name: check for bullwark microservice ui
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "stat path={{ role_path }}/files/bullwark-microservice-ui"
+  register: 'stat_bullwark_microservice_ui'
+
+- name: clone bullwark microservice ui over ssh
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "git repo={{ bullwark_microservice_ui_ssh_url }} dest={{ role_path }}/files/bullwark-microservice-ui"
+  ignore_errors: 'yes'
+  when: 'not stat_bullwark_microservice_ui.stat.exists'
+
+- name: check whether bullwark microservice ui was cloned
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action: "stat path={{ role_path }}/files/bullwark-microservice-ui"
+  register: 'stat_ssh_bullwark_microservice_ui'
+
+- name: clone bullwark microservice ui over https if ssh failed
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    module: expect
+    command: "git clone {{ bullwark_microservice_ui_https_url }} {{ role_path }}/files/bullwark-microservice-ui"
+    responses:
+      (?i)username: "{{ email }}"
+      (?i)password: "{{ password }}"
+  when: 'not stat_ssh_bullwark_microservice_ui.stat.exists'
+
+- name: build bullwark microservice ui
+  vars:
+    ansible_become: 'no'
+  run_once: true
+  local_action:
+    command
+    docker run
+    --rm
+    -w /www
+    -v {{ role_path }}/files/bullwark-microservice-ui:/www
+    node bash -c 'npm install && npm run build --base-href=/bullwark/ --deploy-url=/bullwark/'
+  args:
+    chdir: "{{ role_path }}/files/bullwark-microservice-ui"
+
+- name: copy bullwark microservice server to html root
+  copy:
+    src: 'bullwark-microservice-ui/dist/bullwark-microservice-ui/'
+    dest: "/var/www/html/bullwark"
+    mode: '0755'
+    owner: 'apache'
+    group: 'apache'

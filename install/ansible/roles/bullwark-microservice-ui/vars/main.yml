@@ -1,0 +1,7 @@
+---
+
+docker_registry: ''
+node_image: 'node'
+
+bullwark_microservice_ui_ssh_url: 'ssh://git@github.com:schrodingersket/bullwark-microservice-ui.git'
+bullwark_microservice_ui_https_url: 'https://github.com/schrodingersket/bullwark-microservice-ui.git'

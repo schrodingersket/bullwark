@@ -1,0 +1,7 @@
+---
+
+docker_registry: ''
+golang_image: 'golang'
+
+bullwark_microservice_server_ssh_url: 'ssh://git@github.com:schrodingersket/bullwark-microservice-server.git'
+bullwark_microservice_server_https_url: 'https://github.com/schrodingersket/bullwark-microservice-server.git'

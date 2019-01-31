@@ -32,4 +32,4 @@ echo "password: ${2}" >> vault.yml
 ansible-vault encrypt --vault-id vault_pass vault.yml
 
 find . -type f -print0 | xargs -0 dos2unix
-./ansible.sh
+./ansible.sh ${4}

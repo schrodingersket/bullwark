@@ -51,6 +51,12 @@
     src: 'traefik-proxy.conf'
     dest: '/etc/httpd/conf.d/services/'
 
+- name: write microservice server ui
+  copy:
+    src: 'microservice-ui.conf'
+    dest: '/etc/httpd/conf.d/services/'
+  when: 'install_microservice_server'
+
 - name: ensure httpd run directories exist
   file:
     path: "{{ item }}"

@@ -71,7 +71,9 @@ Vagrant.configure("2") do |config|
 
         vault_password = (0...8).map { (65 + rand(26)).chr }.join
 
-        host.vm.provision "shell", :path => "bootstrap.sh", :args => [username, password, vault_password]
+        host.vm.provision "shell", :path => "bootstrap.sh", :args => [username,
+                                                                      password,
+                                                                      vault_password]
       end
     end
   end

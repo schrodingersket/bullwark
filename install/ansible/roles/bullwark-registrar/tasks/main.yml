@@ -73,3 +73,17 @@
     mode: '0755'
     owner: 'bwrkregistrar'
     group: 'bwrkregistrar'
+
+- name: copy entrypoint scripts
+  copy:
+    src: '{{ item }}'
+    dest: "{{ install_dir }}/registrar/entrypoint.d/"
+    mode: '0755'
+  with_fileglob:
+    - 'entrypoint.d/*'
+
+- name: copy entrypoint
+  copy:
+    src: 'entrypoint.sh'
+    dest: "{{ install_dir }}/registrar/bin/"
+    mode: '0755'

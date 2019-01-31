@@ -73,15 +73,29 @@
     src: 'bullwark-microservice.service.j2'
     dest: '/etc/systemd/system/bullwark-microservice.service'
 
-- name: ensure bullwark microservice is running and enabled
-  systemd:
-    name: 'bullwark-microservice'
-    state: 'restarted'
-    daemon_reload: 'yes'
-    enabled: 'yes'
+- name: copy bullwark microservice registration template
+  run_once: true
+  template:
+    src: "bullwark-microservice-server.json.j2"
+    dest: "{{ install_dir }}/microservices/conf/bullwark-microservice-server.json"
+
+- name: configure bullwark microservice
+  run_once: true
+  command: "bash {{ install_dir }}/microservices/bin/entrypoint.sh"
+  environment:
+    - install_dir: "{{ install_dir }}"
+    - REGISTRAR_HOST: 'localhost'
+    - REGISTRAR_PORT: 8001
 
 - name: add bullwark microservices user to docker group
   user:
     name: 'bwrkmicroservices'
     group: 'docker'
     append: 'yes'
+
+- name: ensure bullwark microservice is running and enabled
+  systemd:
+    name: 'bullwark-microservice'
+    state: 'restarted'
+    daemon_reload: 'yes'
+    enabled: 'yes'

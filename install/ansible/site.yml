@@ -44,7 +44,13 @@
     - { role: traefik-backend, tags: ['traefik-backend'] }
     - { role: traefik, tags: ['traefik'] }
     - { role: bullwark-registrar, tags: ['bullwark-registrar'] }
-    - { role: bullwark-microservices, tags: ['bullwark-microservices'] }
+    - { role: bullwark-microservice-server,
+        tags: ['bullwark-microservice-server'],
+        run_once: true,
+        when: 'install_microservice_server' }
+    - { role: bullwark-microservice-ui,
+        tags: ['bullwark-microservice-ui'],
+        when: 'install_microservice_server' }
   tags:
     - workers_infrastructure
 
