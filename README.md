@@ -168,3 +168,9 @@ deployment to raw hardware resources. This encourages client applications to be
 as platform-agnostic as possible, as customers may require a wide diversity of
 deployment environments for applications build on top of the Bullwark
 architecture.
+
+## Security considerations
+
+All packages utilized in this deployment use OpenSSL as their base crypto library,
+so it's fairly easy to turn this project into a FIPS-compliant solution for
+deploying to sites which are more privacy/security-conscious.

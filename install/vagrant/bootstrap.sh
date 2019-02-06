@@ -13,16 +13,18 @@ command -v ansible >/dev/null 2>&1 || (yum install -y epel-release && yum -y upd
 
 cd ${ANSIBLE_DIR}/install/ansible
 
-echo "Testing credentials..."
-curl -sf -H "Authorization: Basic $(echo -n "${1}:${2}" | base64)" \
-  -X GET \
-  https://api.github.com/users/${1} > \
-  /dev/null || \
-  ( >&2 echo "GitHub authentication failure; please run "\
-  "'vagrant up --provision' again and verify that your credentials are "\
-  "correct. Exiting." && exit 1 )
-
-echo "Credentials are valid. Continuing..."
+# We can uncomment this if any private repos are introduced.
+#
+#echo "Testing credentials..."
+#curl -sf -H "Authorization: Basic $(echo -n "${1}:${2}" | base64)" \
+#  -X GET \
+#  https://api.github.com/users/${1} > \
+#  /dev/null || \
+#  ( >&2 echo "GitHub authentication failure; please run "\
+#  "'vagrant up --provision' again and verify that your credentials are "\
+#  "correct. Exiting." && exit 1 )
+#
+#echo "Credentials are valid. Continuing..."
 
 echo ${3} > vault_pass
 echo "---" > vault.yml
