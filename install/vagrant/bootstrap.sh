@@ -13,18 +13,23 @@ command -v ansible >/dev/null 2>&1 || (yum install -y epel-release && yum -y upd
 
 cd ${ANSIBLE_DIR}/install/ansible
 
-# We can uncomment this if any private repos are introduced.
-#
-#echo "Testing credentials..."
-#curl -sf -H "Authorization: Basic $(echo -n "${1}:${2}" | base64)" \
-#  -X GET \
-#  https://api.github.com/users/${1} > \
-#  /dev/null || \
-#  ( >&2 echo "GitHub authentication failure; please run "\
-#  "'vagrant up --provision' again and verify that your credentials are "\
-#  "correct. Exiting." && exit 1 )
-#
-#echo "Credentials are valid. Continuing..."
+if [[ "${4}" == "true" ]]
+then
+
+  # We can uncomment this if any private repos are introduced.
+  #
+  echo "Testing credentials..."
+  curl -sf -H "Authorization: Basic $(echo -n "${1}:${2}" | base64)" \
+    -X GET \
+    https://api.github.com/users/${1} > \
+    /dev/null || \
+    ( >&2 echo "GitHub authentication failure; please run "\
+    "'vagrant up --provision' again and verify that your credentials are "\
+    "correct. Exiting." && exit 1 )
+
+  echo "Credentials are valid. Continuing..."
+
+fi
 
 echo ${3} > vault_pass
 echo "---" > vault.yml
@@ -34,4 +39,4 @@ echo "password: ${2}" >> vault.yml
 ansible-vault encrypt --vault-id vault_pass vault.yml
 
 find . -type f -print0 | xargs -0 dos2unix
-./ansible.sh ${4}
+./ansible.sh ${5}

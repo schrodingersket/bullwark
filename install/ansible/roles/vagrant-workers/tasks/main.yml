@@ -99,3 +99,9 @@
     state: 'restarted'
     daemon_reload: 'yes'
     enabled: 'yes'
+
+- name: ensure libreswan is running and enabled
+  systemd:
+    name: 'ipsec'
+    state: 'restarted'
+    enabled: 'yes'

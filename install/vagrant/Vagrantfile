@@ -43,41 +43,44 @@ Vagrant.configure("2") do |config|
 
       if Dir.glob("#{File.dirname(__FILE__)}/.vagrant/machines/#{worker["hostname"]}/*").empty? || ARGV[1] == '--provision'
 
-        # Uncomment this if private repositories are necessary for deployment.
-        #
-        # puts "We'll need your GitHub credentials - these will be encrypted inside the orchestrator VM with a randomly generated key."
-        #
-        # # Windows workaround for noecho
-        # #
-        # if RbConfig::CONFIG['host_os'] =~ /cygwin|mswin|mingw32/
-        #   print "Please enter your GitHub username and then hit [ENTER]: "
-        #   STDOUT.flush
-        #   username = STDIN.gets.chomp
-        #   # 8m is the control code to hide characters
-        #   #
-        #   print "Please enter your GitHub password and then hit [ENTER]: \e[0;8m"
-        #   STDOUT.flush
-        #   password = STDIN.gets.chomp
-        #   # 0m is the control code to reset formatting attributes
-        #   #
-        #   puts "\e[0m"
-        #   STDOUT.flush
-        # else
-        #   print "Please enter your GitHub username and then hit [ENTER]: "
-        #   username = STDIN.gets.chomp
-        #   print "Please enter your GitHub password and then hit [ENTER]: "
-        #   password = STDIN.noecho(&:gets).chomp
-        # end
-        #
-        # print "\n"
         username = ''
         password = ''
+
+        if servers['private_auth_required'] == 'true'
+
+          puts "We'll need your GitHub credentials - these will be encrypted inside the orchestrator VM with a randomly generated key."
+
+          # Windows workaround for noecho
+          #
+          if RbConfig::CONFIG['host_os'] =~ /cygwin|mswin|mingw32/
+            print "Please enter your GitHub username and then hit [ENTER]: "
+            STDOUT.flush
+            username = STDIN.gets.chomp
+            # 8m is the control code to hide characters
+            #
+            print "Please enter your GitHub password and then hit [ENTER]: \e[0;8m"
+            STDOUT.flush
+            password = STDIN.gets.chomp
+            # 0m is the control code to reset formatting attributes
+            #
+            puts "\e[0m"
+            STDOUT.flush
+          else
+            print "Please enter your GitHub username and then hit [ENTER]: "
+            username = STDIN.gets.chomp
+            print "Please enter your GitHub password and then hit [ENTER]: "
+            password = STDIN.noecho(&:gets).chomp
+          end
+
+          print "\n"
+        end
 
         vault_password = (0...8).map { (65 + rand(26)).chr }.join
 
         host.vm.provision "shell", :path => "bootstrap.sh", :args => [username,
                                                                       password,
-                                                                      vault_password]
+                                                                      vault_password,
+                                                                      servers['private_auth_required']]
       end
     end
   end
