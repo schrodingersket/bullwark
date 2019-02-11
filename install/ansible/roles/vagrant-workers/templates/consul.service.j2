@@ -8,7 +8,7 @@ ConditionFileNotEmpty={{ install_dir }}/consul/conf/consul.json
 [Service]
 User=consul
 Group=consul
-ExecStart={{ install_dir }}/consul/bin/consul agent -config-dir={{ install_dir }}/consul/conf/ -bind={{ target_ip }}
+ExecStart={{ install_dir }}/consul/bin/consul agent -config-dir={{ install_dir }}/consul/conf/ -bind=0.0.0.0 -advertise={{ target_ip }}
 ExecReload={{ install_dir }}/consul/bin/consul reload
 KillMode=process
 Restart=on-failure

@@ -18,6 +18,10 @@ Vagrant.configure("2") do |config|
     chmod -R 600 /home/vagrant/.ssh/config
     ", privileged: false
 
+  # Disable default /vagrant sync, since only the orchestrator needs it
+  #
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
   servers["workers"].each do |worker|
     config.vm.define worker["hostname"] do |host|
       host.vm.hostname = worker["hostname"]
@@ -32,7 +36,12 @@ Vagrant.configure("2") do |config|
   servers["orchestrators"].each do |worker|
     config.vm.define worker["hostname"] do |host|
 
-      host.vm.synced_folder "../../", "/bullwark", type: "rsync"
+      # Sync this repo without .git and without deleting files
+      #
+      host.vm.synced_folder "../../", "/bullwark", type: "rsync",
+                            rsync__exclude: %w(.git/ .idea/ .vscode/),
+                            rsync__args: %w(--verbose --archive -z --copy-links)
+
       host.vm.hostname = worker["hostname"]
       host.vm.network "private_network", ip: worker["ip"], netmask: "255.255.255.0", dhcp_enabled: false
       host.vm.provider "virtualbox" do |v|
