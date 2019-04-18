@@ -39,10 +39,16 @@ ssh vagrant@<machine ip>
 
 The default password is `vagrant`.
 
-The three machines which comprise the worker cluster out of the box are `bast`
-(192.168.50.129), `kvothe` (192.168.50.130), and `chronicler` (192.168.50.131).
+By default, on orchestrator and three worker machines are created. To run on a
+single machine, copy the contents of `./install/single-server.yml` to
+`./install/servers.yml`.
 
-The orchestrator VM (`elodin`) can be found at 192.168.50.128.
+The three machines which comprise the default worker cluster out of the box are
+ `bast` (192.168.50.129), `kvothe` (192.168.50.130), and `chronicler`
+ (192.168.50.131).
+
+The orchestrator VM (`elodin`) can be found at 192.168.50.128. When running in
+a single-server deployment, this machine is also the only worker.
 
 ### Ansible Development
 
@@ -75,15 +81,6 @@ execution to particular playbooks:
 ./ansible.sh --tags "set_hosts,common,ipsec"
 ```
 
-Alternatively, if you are using `vagrant up --provision` from your host to 
-execute your modifications, you can run something like:
-
-```bash
-```
-
-Note that the `set_hosts` and `common` tags are always required, as they provide
-common configuration for all other roles.
-
 ## IPSec Verification
 
 To verify that IPSec is running, simply ping one machine from another. For
@@ -100,6 +97,9 @@ like:
 
 Anything running over IPSec should communicate over the 192.168.50.128/25 subnet 
 (which is the only one on which the cluster can currently communicate).
+
+Note that in a single-server deployment, the IPSec network only consists of one
+machine, so no output will be generated from running this command on `elodin`.
 
 That said, all ports are available for access by default from the host machine.
 Nobody enjoys SSH tunnels that much during development.
